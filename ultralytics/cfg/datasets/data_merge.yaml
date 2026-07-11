@@ -1,0 +1,18 @@
+path: /home/sam/yolo/yolo/ultralytics/ultralytics/ship_plane
+train: data/train/images
+val: data/valid/images
+test: data/test/images
+
+# train: data_fix/train/images
+# val: data_fix/valid/images
+# test: data_fix/test/images
+  
+nc: 7
+names:
+  0: naval
+  1: Merchant
+  2: dock
+  3: other_vessel
+  4: airplane
+  5: large-vehicle
+  6: small-vehicle

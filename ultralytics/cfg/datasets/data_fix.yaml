@@ -1,0 +1,20 @@
+path: /home/sam/yolo/yolo/ultralytics/ultralytics/ship
+
+train: data_fix/train/images
+val: data_fix/valid/images
+test: data_fix/test/images
+
+# train: data_origin/train/images
+# val: data_origin/valid/images
+# test: data_origin/test/images
+
+# nc: 1
+# names:
+#   0: ship
+  
+nc: 4
+names:
+  0: naval
+  1: Merchant
+  2: dock
+  3: other_vessel

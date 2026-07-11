@@ -1,0 +1,26 @@
+# 設定訓練集和驗證集的圖片路徑
+
+path: /home/sam/yolo/yolo/ultralytics/ultralytics/ship
+train: data_obb/train/images
+val: data_obb/valid/images
+test: data_obb/test/images
+
+# train: ship/data_gray/train/images
+# val: ship/data_gray/valid/images
+# test: ship/data_gray/test/images
+
+# OBB 任務的特定參數
+
+task: obb
+
+# 分類數量
+
+nc: 4
+
+# 分類名稱
+
+names:
+  0: naval
+  1: Merchant
+  2: dock
+  3: other_vessel

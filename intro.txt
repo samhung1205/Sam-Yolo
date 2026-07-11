@@ -1,0 +1,41 @@
+1.yolo detect train model=yolo11n.pt data=ultralytics/cfg/datasets/data_origin.yaml \
+  epochs=150 imgsz=960 batch=16 \
+  device=0 \
+  project=runs_ship name=11n_base_single
+2.yolo detect train \
+  model=ultralytics/cfg/models/11/yolo11n_asff.yaml \
+  data=ultralytics/cfg/datasets/data_origin.yaml \
+  pretrained=yolo11n.pt \
+  epochs=140 imgsz=960 batch=16 \
+  device=0 \
+  project=runs_ship name=11n_asff
+3. yolo obb train model=./OBB_model/yolo11n-obb.pt data=data_obb.yaml epochs=100 imgsz=960 batch=8 device=0
+
+-- 對資料做驗證 
+yolo detect val \
+  model=runs_ship/11n_baseline2/weights/best.pt \
+  data=ultralytics/cfg/datasets/data_origin.yaml \
+  split=test
+yolo detect val \
+  model=runs_ship/11n_asff/weights/best.pt \
+  data=ultralytics/cfg/datasets/data_origin.yaml \
+  split=test
+  
+yolo val model=./runs/detect/train/weights/best.pt data=data_origin.yaml split=test
+yolo val model=./runs_asff_gray/train52/weights/best.pt data=data_origin.yaml split=test
+yolo val model=./runs/obb/train/weights/best.pt data=data_obb.yaml split=test
+
+-- 對 valid or test 中所有圖片做推論
+yolo detect predict model=./runs/detect/train/weights/best.pt source=valid/images save_txt
+yolo detect predict model=./training/b2/best.pt source=HRSC/valid_aug/images save_txt save_conf
+yolo detect predict model=./training/obb1/best.pt source=valid_obb/images save_txt
+
+# 舊 model 在同一張測試圖上預測
+yolo predict model="./runs/detect/train/weights/best.pt \
+      source=ship/data_origin/test/images/t_0001.bmp \
+      save=True name=pred_old
+
+# 新 model 預測
+yolo predict model="./runs_asff_fix/asff_fix_stage2/weights/best.pt" \
+      source=ship/data_origin/test/images/t_0001.bmp \
+      save=True name=pred_fix

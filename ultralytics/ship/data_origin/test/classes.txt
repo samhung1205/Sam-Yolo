@@ -1,0 +1,4 @@
+naval
+Merchant
+dock
+other_vessel

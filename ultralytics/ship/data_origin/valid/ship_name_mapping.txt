@@ -1,0 +1,52 @@
+原始船名 -> 分類
+------------------------------
+AOE -> naval
+Aircraft carrier -> naval
+Arleigh Burke DD -> naval
+Asagiri DD -> naval
+Atago DD -> naval
+Austin LL -> naval
+Auxiliary Ships -> naval
+Barge -> Merchant
+Cargo -> Merchant
+Commander -> naval
+Container Ship -> Merchant
+Destroyer -> naval
+Dock -> dock
+EPF -> naval
+Enterprise -> naval
+Ferry -> Merchant
+Fishing Vessel -> Merchant
+Frigate -> naval
+Hatsuyuki DD -> naval
+Hovercraft -> Merchant
+Hyuga DD -> naval
+LHA LL -> naval
+LSD_41 LL -> naval
+Landing -> naval
+Masyuu AS -> naval
+Medical ship -> other_vessel
+Merchant -> Merchant
+Midway -> naval
+Motorboat -> Merchant
+Nimitz -> naval
+Oil Tanker -> Merchant
+Osumi LL -> naval
+Patrol -> naval
+Perry FF -> naval
+RoRo -> Merchant
+Sailboat -> Merchant
+Sanantonio AS -> naval
+Ship -> other_vessel
+Submarine -> naval
+Test ship -> other_vessel
+Ticonderoga -> naval
+Training ship -> other_vessel
+Tugboat -> Merchant
+Warship -> naval
+Wasp LL -> naval
+Yacht -> Merchant
+YuDao LL -> naval
+YuDeng LL -> naval
+YuTing LL -> naval
+YuZhao LL -> naval

@@ -199,3 +199,15 @@ calibration_*.npy
 *.heic
 *.ico
 *.raw
+
+# Model checkpoints and weights
+ultralytics/cutout/checkpoints/
+*.pth
+*.pt
+*.onnx
+*.engine
+
+# YOLO generated files
+*.cache
+runs/
+wandb/

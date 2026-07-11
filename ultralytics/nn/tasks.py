@@ -1,5 +1,5 @@
-# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
-
+# Ultralytics ?? AGPL-3.0 License - https://ultralytics.com/license
+from .AddModules import *
 import contextlib
 import pickle
 import re
@@ -9,66 +9,67 @@ from pathlib import Path
 
 import torch
 import torch.nn as nn
+from ultralytics.nn.modules import *
 
 from ultralytics.nn.autobackend import check_class_names
-from ultralytics.nn.modules import (
-    AIFI,
-    C1,
-    C2,
-    C2PSA,
-    C3,
-    C3TR,
-    ELAN1,
-    OBB,
-    PSA,
-    SPP,
-    SPPELAN,
-    SPPF,
-    A2C2f,
-    AConv,
-    ADown,
-    Bottleneck,
-    BottleneckCSP,
-    C2f,
-    C2fAttn,
-    C2fCIB,
-    C2fPSA,
-    C3Ghost,
-    C3k2,
-    C3x,
-    CBFuse,
-    CBLinear,
-    Classify,
-    Concat,
-    Conv,
-    Conv2,
-    ConvTranspose,
-    Detect,
-    DWConv,
-    DWConvTranspose2d,
-    Focus,
-    GhostBottleneck,
-    GhostConv,
-    HGBlock,
-    HGStem,
-    ImagePoolingAttn,
-    Index,
-    LRPCHead,
-    Pose,
-    RepC3,
-    RepConv,
-    RepNCSPELAN4,
-    RepVGGDW,
-    ResNetLayer,
-    RTDETRDecoder,
-    SCDown,
-    Segment,
-    TorchVision,
-    WorldDetect,
-    YOLOEDetect,
-    YOLOESegment,
-    v10Detect,
-)
+# from ultralytics.nn.modules import (
+#     AIFI,
+#     C1,
+#     C2,
+#     C2PSA,
+#     C3,
+#     C3TR,
+#     ELAN1,
+#     OBB,
+#     PSA,
+#     SPP,
+#     SPPELAN,
+#     SPPF,
+#     A2C2f,
+#     AConv,
+#     ADown,
+#     Bottleneck,
+#     BottleneckCSP,
+#     C2f,
+#     C2fAttn,
+#     C2fCIB,
+#     C2fPSA,
+#     C3Ghost,
+#     C3k2,
+#     C3x,
+#     CBFuse,
+#     CBLinear,
+#     Classify,
+#     Concat,
+#     Conv,
+#     Conv2,
+#     ConvTranspose,
+#     Detect,
+#     DWConv,
+#     DWConvTranspose2d,
+#     Focus,
+#     GhostBottleneck,
+#     GhostConv,
+#     HGBlock,
+#     HGStem,
+#     ImagePoolingAttn,
+#     Index,
+#     LRPCHead,
+#     Pose,
+#     RepC3,
+#     RepConv,
+#     RepNCSPELAN4,
+#     RepVGGDW,
+#     ResNetLayer,
+#     RTDETRDecoder,
+#     SCDown,
+#     Segment,
+#     TorchVision,
+#     WorldDetect,
+#     YOLOEDetect,
+#     YOLOESegment,
+#     v10Detect,
+# )
 from ultralytics.utils import DEFAULT_CFG_DICT, LOGGER, YAML, colorstr, emojis
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
 from ultralytics.utils.loss import (
@@ -281,7 +282,7 @@ class BaseModel(torch.nn.Module):
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
         if isinstance(
-            m, Detect
+            m, (Detect,DetectASFF,SegmentASFF,Detect_ASFF,DyHead,Detect_PPA,DetectRFAConv,SegmentRFAConv)
         ):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect, YOLOEDetect, YOLOESegment
             m.stride = fn(m.stride)
             m.anchors = fn(m.anchors)
@@ -390,7 +391,7 @@ class DetectionModel(BaseModel):
 
         # Build strides
         m = self.model[-1]  # Detect()
-        if isinstance(m, Detect):  # includes all Detect subclasses like Segment, Pose, OBB, YOLOEDetect, YOLOESegment
+        if isinstance(m, (Detect, DetectASFF, SegmentASFF, Detect_ASFF, DyHead, Detect_PPA,SegmentRFAConv)):  # includes all Detect subclasses like Segment, Pose, OBB, YOLOEDetect, YOLOESegment
             s = 256  # 2x min stride
             m.inplace = self.inplace
 
@@ -398,11 +399,21 @@ class DetectionModel(BaseModel):
                 """Perform a forward pass through the model, handling different Detect subclass types accordingly."""
                 if self.end2end:
                     return self.forward(x)["one2many"]
-                return self.forward(x)[0] if isinstance(m, (Segment, YOLOESegment, Pose, OBB)) else self.forward(x)
+                return self.forward(x)[0] if isinstance(m, (Segment, YOLOESegment, Pose, OBB, SegmentASFF,SegmentRFAConv)) else self.forward(x)
 
             self.model.eval()  # Avoid changing batch statistics until training begins
             m.training = True  # Setting it to True to properly return strides
-            m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
+            # m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward
+            try:
+                m.stride = torch.tensor([s / x.shape[-2] for x in _forward(torch.zeros(1, ch, s, s))])  # forward on CPU
+            except RuntimeError:
+                try:
+                    self.model.to(torch.device('cuda'))
+                    m.stride = torch.tensor([s / x.shape[-2] for x in _forward(
+                        torch.zeros(1, ch, s, s).to(torch.device('cuda')))])  # forward on CUDA
+                except RuntimeError as error:
+                    raise error
+
             self.stride = m.stride
             self.model.train()  # Set model back to training(default) mode
             m.bias_init()  # only run once
@@ -1412,7 +1423,7 @@ def torch_safe_load(weight, safe_only=False):
         if e.name == "models":
             raise TypeError(
                 emojis(
-                    f"ERROR ❌️ {weight} appears to be an Ultralytics YOLOv5 model originally trained "
+                    f"ERROR ?��? {weight} appears to be an Ultralytics YOLOv5 model originally trained "
                     f"with https://github.com/ultralytics/yolov5.\nThis model is NOT forwards compatible with "
                     f"YOLOv8 at https://github.com/ultralytics/ultralytics."
                     f"\nRecommend fixes are to train a new model using the latest 'ultralytics' package or to "
@@ -1422,7 +1433,7 @@ def torch_safe_load(weight, safe_only=False):
         elif e.name == "numpy._core":
             raise ModuleNotFoundError(
                 emojis(
-                    f"ERROR ❌️ {weight} requires numpy>=1.26.1, however numpy=={__import__('numpy').__version__} is installed."
+                    f"ERROR ?��? {weight} requires numpy>=1.26.1, however numpy=={__import__('numpy').__version__} is installed."
                 )
             ) from e
         LOGGER.warning(
@@ -1553,6 +1564,18 @@ def parse_model(d, ch, verbose=True):
             SCDown,
             C2fCIB,
             A2C2f,
+            RCSOSA,
+            C3k2_RCSOSA,
+            SPDConv,
+            DynamicConv,
+            C3k2_DynamicConv,
+            RFAConv,
+            C3k2_RFAConv,
+            RFAConv1,
+            C3k2_RFAConv1,
+            EfficientViMBlock,
+            C3k2_EfficientViMBlock,
+            C2PSA_TripleAttention,
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1572,9 +1595,12 @@ def parse_model(d, ch, verbose=True):
             C2fCIB,
             C2PSA,
             A2C2f,
+            C3k2_RFAConv1,
+            C3k2_EfficientViMBlock,
         }
     )
     for i, (f, n, m, args) in enumerate(d["backbone"] + d["head"]):  # from, number, module, args
+        
         m = (
             getattr(torch.nn, m[3:])
             if "nn." in m
@@ -1609,8 +1635,13 @@ def parse_model(d, ch, verbose=True):
                     args.extend((True, 1.2))
             if m is C2fCIB:
                 legacy = False
-        elif m is AIFI:
+        elif m in {AIFI,DySample,SCINet}:
             args = [ch[f], *args]
+        
+        elif m is SCAM:
+            c2 = ch[f]
+            args = [c2]
+
         elif m in frozenset({HGStem, HGBlock}):
             c1, cm, c2 = ch[f], args[0], args[1]
             args = [c1, cm, c2, *args[2:]]
@@ -1623,16 +1654,24 @@ def parse_model(d, ch, verbose=True):
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
+        elif m in {WFU}:
+            c1 = [ch[x] for x in f]
+            c2 = c1[0]
+            args = [c1]
         elif m in frozenset(
-            {Detect, WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect}
+            {Detect, WorldDetect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, ImagePoolingAttn, v10Detect, DetectASFF, SegmentASFF,
+             Detect_ASFF, DyHead, Detect_PPA, DetectRFAConv,SegmentRFAConv}
         ):
             args.append([ch[x] for x in f])
-            if m is Segment or m is YOLOESegment:
+            if m in {Segment, YOLOESegment, SegmentASFF,SegmentRFAConv}:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
-            if m in {Detect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB}:
+            if m in {Detect, YOLOEDetect, Segment, YOLOESegment, Pose, OBB, SegmentASFF}:
                 m.legacy = legacy
         elif m is RTDETRDecoder:  # special case, channels arg must be passed in index 1
             args.insert(1, [ch[x] for x in f])
+        elif m in {LGAG}:
+            c2 = ch[f[0]]
+            args = [c2]
         elif m is CBLinear:
             c2 = args[0]
             c1 = ch[f]
@@ -1643,6 +1682,9 @@ def parse_model(d, ch, verbose=True):
             c2 = args[0]
             c1 = ch[f]
             args = [*args[1:]]
+        elif m is DySample:
+            args = [ch[f]]
+
         else:
             c2 = ch[f]
 
@@ -1713,14 +1755,16 @@ def guess_model_task(model):
         m = cfg["head"][-1][-2].lower()  # output module name
         if m in {"classify", "classifier", "cls", "fc"}:
             return "classify"
-        if "detect" in m:
+        if m == "detect":
             return "detect"
-        if "segment" in m:
+        if m in {"segment", "segmentasff", "segmentrfaconv"}:
             return "segment"
-        if m == "pose":
+        if m in {"pose","pose_self_attention"}:
             return "pose"
         if m == "obb":
             return "obb"
+        else:
+            return "detect"
 
     # Guess from model cfg
     if isinstance(model, dict):
@@ -1735,7 +1779,7 @@ def guess_model_task(model):
             with contextlib.suppress(Exception):
                 return cfg2task(eval(x))  # nosec B307: safe eval of known attribute paths
         for m in model.modules():
-            if isinstance(m, (Segment, YOLOESegment)):
+            if isinstance(m, (Segment, YOLOESegment, SegmentASFF, SegmentRFAConv)):
                 return "segment"
             elif isinstance(m, Classify):
                 return "classify"
@@ -1743,7 +1787,9 @@ def guess_model_task(model):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"
-            elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect)):
+            elif isinstance(m, (Detect, WorldDetect, YOLOEDetect, v10Detect, Detect_ASFF, DyHead, Detect_PPA, DetectRFAConv)):
+                return "detect"
+            else:
                 return "detect"
 
     # Guess from model filename
