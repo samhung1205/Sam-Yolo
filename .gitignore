@@ -26,7 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-requirements.txt
+# Project dependency records are tracked.
 !examples/**/requirements.txt
 setup.py
 ultralytics.egg-info
@@ -103,7 +103,7 @@ ipython_config.py
 #   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
 #   commonly ignored for libraries.
-uv.lock
+# uv.lock can be tracked for reproducible experiments.
 
 # PEP 582; used by e.g. github.com/David-OConnor/pyflow
 __pypackages__/
